@@ -395,6 +395,64 @@ int fpmain()
 namespace 的用处：处理重名的 function
 */
 
+#include <thread>
+#include <chrono>
+
+struct Timer
+{
+	std::chrono::time_point<std::chrono::steady_clock> start, end;
+	std::chrono::duration<float> duration;
+
+	Timer()
+	{
+		start = std::chrono::high_resolution_clock::now();
+	}
+
+	~Timer()
+	{
+		end = std::chrono::high_resolution_clock::now();
+		duration = end - start;
+
+		float ms = duration.count() * 1000.0f;
+
+		std::cout << "Timer Took " << ms << "ms" << std::endl;
+	}
+};
+
+void Function100()
+{
+	Timer timer;
+	for (int i=0;i<100;i++)
+	{
+		std::cout << "Hello!\n"; // << std::endl很慢
+		//std::cout << "Hello!" << std::endl;
+	}
+}
+
+int Timing_main()
+{
+	/*using namespace std::literals::chrono_literals;
+
+	auto start = std::chrono::high_resolution_clock::now();
+
+	std::this_thread::sleep_for(1s);
+
+	auto end = std::chrono::high_resolution_clock::now();
+
+	std::chrono::duration<float> duration = end - start;
+
+	std::cout << duration.count() << "s" << std::endl;*/
+
+	Function100();
+
+	std::cin.get();
+
+	return 0;
+}
+
+
+
+
 	  //
 	  //#define LOG(x) std::cout << x << std:: endl;
 	  //
@@ -495,53 +553,54 @@ namespace 的用处：处理重名的 function
 
 
 
-	  //class Entity
-	  //{
-	  //public:
-	  //	virtual std::string GetName()
-	  //	{
-	  //		return "Entity";
-	  //	}
-	  //};
+class EntityVirtual
+{
+public:
+	virtual std::string GetName()
+	{
+		return "Entity";
+	}
+};
 
-	  //class Player : public Entity
-	  //{
-	  //private:
-	  //	std::string m_Name;
-	  //public:
-	  //	Player(const std::string& name) : m_Name(name){}
-	  //
-	  //	std::string GetName() { return m_Name; }
-	  //};
+class PlayerVirtual : public EntityVirtual
+{
+private:
+	std::string m_Name;
+public:
+	PlayerVirtual(const std::string& name) : m_Name(name) {}
 
-	  //void PrintTest(Entity* entity)
-	  //{
-	  //	std::cout << entity->GetName() << std::endl;
-	  //}
-	  //int main()
-	  //{
-	  //	char name[6] = {'c','h','e','r','n','o'};
-	  //	Entity* e = new Entity();
-	  //	PrintTest(e);
-	  //	Player* p = new Player("Cherno");
-	  //	PrintTest(p);
-	  //
-	  //	std::string name1 = "name";
-	  //	std::cin.get();
-	  //
-	  //	using namespace std::string_literals;
-	  //
-	  //	std::string name0 = (std::string)"cherno"+"hello";
-	  //
-	  //	std::string name02 = "cherno"s + "Hello";
+	std::string GetName() { return m_Name; }
+};
+
+void PrintTest(EntityVirtual* entity)
+{
+	std::cout << entity->GetName() << std::endl;
+}
+int mainVirtual()
+{
+	char name[6] = { 'c','h','e','r','n','o' };
+	EntityVirtual* e = new EntityVirtual();
+	PrintTest(e);
+	PlayerVirtual* p = new PlayerVirtual("Cherno");
+	PrintTest(p);
+
+	std::string name1 = "name";
+	std::cin.get();
+
+	using namespace std::string_literals;
+
+	std::string name0 = (std::string)"cherno" + "hello";
+
+	std::string name02 = "cherno"s + "Hello";
 
 
-		  //这样会打印两次Entity
-		  //如果想要PrintTest(p)调用Player类的构造函数，需要使用虚函数
+		/*这样会打印两次Entity
+		***********如果想要PrintTest(p)调用Player类的构造函数，需要使用虚函数*/
 		  /*
 		  虚函数使用动态分布来解决这个问题,但是有两个运行时间损耗和虚函数有关 extra space
 		  */
-		  //}
+	return 0;
+}
 
 		  //void PrintEntity(Entity* e);
 		  //void UseEntity(const Entity& e);
@@ -673,7 +732,7 @@ struct Vector3
 	float x, y, z;
 };
 
-int main()
+int main01()
 {
 	/*String string = "Cherno";
 	std::cout << string << std::endl;
@@ -699,7 +758,237 @@ int main()
 	std::cout << offset << std::endl;
 	
 	std::cin.get();
+	return 0;
 }
 
 
 
+int mainArray()
+{
+	//2d数组
+	int** a2d = new int* [50];
+	for (int i=0;i<50;i++)
+	{
+		a2d[i] = new int[50];
+	}
+	for (int i = 0; i < 50; i++)
+		delete[] a2d[i];
+	delete[] a2d;
+
+	//3d数组，三维及以上都是指向指针的指针数组
+	int*** a3d = new int** [50];
+	for (int i=0;i<50;i++)
+	{
+		a3d[i] = new int* [50];
+		for (int j = 0; j < 50; j++)
+			a3d[i][j] = new int[50];
+	}
+
+	//当“某行”数据执行完毕，进入下一行寻址是可能会跳到RAM中的另一块区域，可能会造成 cache miss ，并且速度也很慢
+	//（不连贯）
+	//一维数组比二维数组快很多
+	return 0;
+}
+
+//sorting
+#include <algorithm>
+
+int mainSorting()
+{
+	std::vector<int> values = { 3,5,1,4,2 };
+	std::sort(values.begin(), values.end(), std::greater<int>());//54321
+	std::sort(values.begin(), values.end(), [](int a, int b)
+	{
+			return a < b;
+	});//12345
+	std::sort(values.begin(), values.end(), [](int a, int b)
+		{
+			return a > b;
+		});//54321
+	std::sort(values.begin(), values.end(), [](int a, int b)
+		{
+			if (a == 1) return false;
+			if (b == 1) return true;
+			return a < b;
+		});//23451
+	for (auto value : values)
+	{
+		std::cout << value << std::endl;
+	}
+	
+	return 0;
+}
+
+/*
+隐式转换使用的不是一块内存
+
+double& value = *(double*)&a 这样就是直接从同一块内存里修改，但是这样可能溢出导致崩溃
+*/
+
+struct Ex01
+{
+	int x, y;
+
+	int* GetPositon()
+	{
+		return &x;
+	}
+};
+
+int mainTypePunning()//把类型作为  …不用拷贝的方法
+{
+	Ex01 e = { 5,8 };
+
+	int* position = (int*)&e;
+	int* positionX = e.GetPositon();
+
+	int y = *(int*)((char*)&e + 4);
+
+	std::cout << position[0] << "," << position[1] << std::endl;
+	return 0;
+}
+
+/*
+Union: 一次只能 occupy 一个的 class 或者 struct 用一块4字节的空间
+
+用匿名的union和匿名的struct可以直接访问结构体的成员变量
+
+比type punning 更直观
+*/
+
+struct Vector2
+{
+	float x, y;
+};
+
+
+struct Vector4
+{
+	union
+	{
+		struct 
+		{
+			float x, y, z, w;
+		};
+		struct  
+		{
+			Vector2 a, b;//a 和 x y 共享内存，b 和 z w 共享内存
+		};
+	};
+	//float x, y, z, w;//看成2组2
+
+	//Vector2 Get()
+	//{
+	//	return Vector2();//实际上是返回来一个new的对象
+	//}
+
+	/*Vector2& Get()
+	{
+		return *(Vector2*)(&x);
+	}*/
+};
+
+void PrintVector2(const Vector2& vector)
+{
+	std::cout << vector.x << "," << vector.y << std::endl;
+}
+
+int mainUnion()
+{
+	//struct Union
+	//{
+	//	union
+	//	{
+	//		float a;
+	//		int b;
+	//	};
+	//};
+	
+	//如果有了862-869行，则可以直接访问xyzw
+
+	Vector4 vector = { 1.0f,2.0f,3.0f,4.0f };
+	PrintVector2(vector.a);
+	PrintVector2(vector.b);
+
+	vector.z = 500.0f;
+	PrintVector2(vector.a);
+	PrintVector2(vector.b);
+	/*	1,2
+		3, 4
+		1, 2
+		500, 4*/
+
+
+	std::cin.get();
+	return 0;
+}
+
+/*
+virtual Destructor ，父类和子类调用析构函数的问题 Base* poly = new Derived();
+
+用父类指向子类的实例，没有virtual会导致子类的析构函数无法被调用
+*/
+
+class Base
+{
+public:
+	Base() { std::cout << "Base Constructor!\n"; }
+	virtual ~Base() { std::cout << "Base Destructor!\n"; }//很重要！
+};
+
+class Derived : public Base
+{
+public:
+	Derived() { std::cout << "Derived Constructor!\n"; }
+	~Derived() { std::cout << "Derived Destructor!\n"; }
+};
+
+class AnotherClass : public Base
+{
+public:
+	AnotherClass(){}
+	~AnotherClass(){}
+};
+
+int main()
+{
+	/*Base* base = new Base();
+	delete base;
+	std::cout << "================\n";
+	Derived* derive = new Derived();
+	delete derive;
+	std::cout << "================\n";
+	Base* poly = new Derived();
+	delete poly;*/
+	/*
+	Base Constructor!
+	Base Destructor!
+	================
+	Base Constructor!
+	Derived Constructor! 
+	Derived Destructor!
+	Base Destructor!
+	================
+	Base Constructor!
+	Derived Constructor! 这里有问题 并没有调用derive类的析构, 这样造成的问题是，如果在子类中含有引用成员变量，则不会被析构函数释放内存，因为子类的析构函数没有调用
+	Base Destructor!
+	*/
+
+	Derived* derive = new Derived();
+
+	Base* base = derive;
+
+	AnotherClass* ac = dynamic_cast<AnotherClass *>(base);
+	if (!ac)
+	{
+		//用来检测 ac 是否由 base 类型转换为 AnotherClass 类转换成功
+	}
+
+	return 0;
+}
+
+/*
+Casting,c-style 的 cast 就是显式转换或者隐式转换
+
+C++ style 的 cast 包括static dynamic cast
+*/
